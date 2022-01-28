@@ -24,6 +24,7 @@ mapTable = [[0x2, 0x3, 0x1, 0x0, 0x8, 0x9, 0xb, 0xa, 0xe, 0xf, 0xd, 0xc, 0x4, 0x
 ]
 
 
+
 def getColumn(mapTable, col):
     # https://stackoverflow.com/questions/903853/how-do-you-extract-a-column-from-a-multi-dimensional-array
     return [hex(row[col]) for row in mapTable]
@@ -55,13 +56,19 @@ def getCoordinateHigh(mapTable, hvalue):
                 result.append([i,j])
     return result
 
-def getCoordinateLow(mapTable, lvalue):
+def getCoordinate(mapTable, value):
     result = []
     for i in range(len(mapTable)):
         for j in range(len(mapTable)):
-            if hex(mapTable[i][j]) == lvalue: #check restrictions
+            if hex(mapTable[i][j]) == value: #check restrictions
                 result.append([i,j])
     return result
+
+
+def getColNum(mapTable, row, value):
+    for j in range(len(mapTable)):
+        if hex(mapTable[row][j]) == value:
+            return j 
 
 # https://www.geeksforgeeks.org/python-intersection-two-lists/
 def intersection(lst1, lst2):
@@ -78,39 +85,74 @@ def keyFinder(keyLength, cipherText):
         if x not in  modDic:
             modDic[x] = []
         # https://stackoverflow.com/questions/606191/convert-bytes-to-a-string
-        modDic[x].append(cipherText[i].decode("utf-8") )
-    # After this loop, each dic[x] should contain letters index%keyLength = x
-    print("mod: ", modDic[0])
-
+        exist = False
+        for item in modDic[x]:
+            if item[0] == cipherText[i].decode("utf-8"):
+                item[1] += 1
+                exist = True
+        if not exist:
+            modDic[x].append([cipherText[i].decode("utf-8"),1] )
+    
+    frequentLetter = []
+    
+    for i in range(keyLength):
+        modDic[i].sort(key=lambda x: x[1], reverse=True)
+        # Get the most frequently appeared letter and append it to list
+        frequentLetter.append(modDic[i][0][0])
+    
     key = []
-    for index, wordList in modDic.items():
-        validKeyLetter = []
-        counter = 0
-        for letter in wordList:
-            ch = hex(int("0x"+letter[0],16))
-            cl = hex(int("0x"+letter[1],16))
+    for letter in frequentLetter:
+        ch = hex(int("0x"+letter[0],16))
+        cl = hex(int("0x"+letter[1],16))
+        # Here we assume the most frequenlt used ascii in plain text English to be space(Hex:20)
+        ph = hex(int("0x02",16))
+        pl = hex(int("0x00",16))
+        rowH = 2
+        rowL = 0
+        colH = getColNum(mapTable,rowH,ch)
+        colL = getColNum(mapTable,rowL,cl)
+        kh = hex(colH)[2:]
+        kl = hex(colL)[2:]
+        keyLetter = hex(int("0x"+kh+kl,16))
+        key.append(keyLetter)
+    print(key)
 
-            hList = getCoordinateHigh(mapTable, ch) #(ph,kh)
-            #print("hList: ",hList)
-            lList = getCoordinateLow(mapTable, cl) #(pl,kl)
-            #print("lList: ",lList)
+        
+    
 
-            #allPosP = [(x[0],y[0]) for x in hList for y in lList]
-            allPosKey = [(x[1],y[1]) for x in hList for y in lList]
-            #print("K: ", allPosKey)
+
+
+
+
+    # key = []
+    # for index, wordList in modDic.items():
+    #     validKeyLetter = []
+    #     counter = 0
+    #     for letter in wordList:
+    #         ch = hex(int("0x"+letter[0][0],16))
+    #         cl = hex(int("0x"+letter[0][1],16))
+
+    #         hList = getCoordinateHigh(mapTable, ch) #(ph,kh)
+    #         #print("hList: ",hList)
+    #         lList = getCoordinateLow(mapTable, cl) #(pl,kl)
+    #         #print("lList: ",lList)
+
+    #         #allPosP = [(x[0],y[0]) for x in hList for y in lList]
+    #         allPosKey = [(x[1],y[1]) for x in hList for y in lList]
+    #         #print("K: ", allPosKey)
 
             
-            if counter == 0:
-                validKeyLetter = allPosKey
-            else:
-                #if len(intersection(validKeyLetter,allPosKey)) == 0:
-                    #print(validKeyLetter)
-                    #print(ch, cl)
-                validKeyLetter = intersection(validKeyLetter,allPosKey)
-                #print(allPosKey)
-                #print("HI:",index,  validKeyLetter)
-            counter += 1
-        print("Valid: ", validKeyLetter)
+    #         if counter == 0:
+    #             validKeyLetter = allPosKey
+    #         else:
+    #             #if len(intersection(validKeyLetter,allPosKey)) == 0:
+    #                 #print(validKeyLetter)
+    #                 #print(ch, cl)
+    #             validKeyLetter = intersection(validKeyLetter,allPosKey)
+    #             #print(allPosKey)
+    #             #print("HI:",index,  validKeyLetter)
+    #         counter += 1
+    #     print("Valid: ", validKeyLetter)
 
 
 
